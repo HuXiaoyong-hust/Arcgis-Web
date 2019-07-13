@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>信息查询</title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.11/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.11/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/MapImageLayer",
+        "esri/layers/FeatureLayer",
+        "esri/layers/ImageryLayer",
+        "esri/layers/GroupLayer",
+        "esri/widgets/LayerList",
+
+        "esri/widgets/Home",
+        "esri/widgets/Search"  
+      ], function(Map, MapView, MapImageLayer,FeatureLayer,ImageryLayer,GroupLayer,LayerList,
+        Home,Search
+       ) {
+
+        var templateHeLiu={
+            title: "{Name}",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "Name",
+                    visible: true,
+                    label: "河流名称"
+                  },
+                  {
+                    fieldName: "河流全长",
+                    visible: true,
+                    label: "河流全长(km)",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "河长",
+                    visible: true,
+                    label: "总河长"
+                  },
+                  {
+                    fieldName: "河段名称",
+                    visible: true,
+                    label: "河段名称"
+                  },    
+                  {
+                    fieldName: "左岸河岸长",
+                    visible: true,
+                    label: "河段左岸长度(km)",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "右岸河岸长",
+                    visible: true,
+                    label: "河段右岸长度(km)",
+                    format: {
+                      places:3
+                    }
+                  },             
+                  {
+                    fieldName: "左岸河长",
+                    visible: true,
+                    label: "河段左岸河长"
+                  },
+                  {
+                    fieldName: "右岸河长",
+                    visible: true,
+                    label: "河段右岸河长"
+                  }
+                ]
+              },
+              {
+                type: "text", 
+                text:
+                  "<h2>图像资料</h2>"
+              },
+              {
+                type: "media", 
+                mediaInfos: [
+                  {
+                    title: "<center>红水河长城乡汉民小区封堵排污口</center>",
+                    type: "image",
+                    value: {
+                      sourceURL:
+                        "D:\\admin\\Desktop\\liangZhouQuData\\620180927提华科_20180927\\河道影像资料\\红水河\\红水河长城乡汉民小区封堵排污口 (4).JPG"
+                    }
+                  },
+                  {
+                    title: "<center>调研第四处——黄羊河张义大桥 (2)下游</center>",
+                    type: "image",
+                    value: {
+                      sourceURL:
+                        "D:\\admin\\Desktop\\liangZhouQuData\\620180927提华科_20180927\\河道影像资料\\黄羊河\\10调研第四处——黄羊河张义大桥 (2)下游.JPG"
+                    }
+                  },
+                  {
+                    title: "<center>10调研第四处——黄羊河张义大桥 (4)下游右岸照</center>",
+                    type: "image",
+                    value: {
+                      sourceURL:
+                        "D:\\admin\\Desktop\\liangZhouQuData\\620180927提华科_20180927\\河道影像资料\\黄羊河\\10调研第四处——黄羊河张义大桥 (4)下游右岸照.JPG"
+                    }
+                  }
+                ]
+              },
+              {
+                type: "text", 
+                text:
+                  "<h2>视频资料</h2>"
+              },
+              {
+                type: "text", 
+                text:
+                  "<center><video  width='356' height='200' preload controls>"+
+                   "<source src='D:\\admin\\Desktop\\liangZhouQuData\\620180927提华科_20180927\\河道影像资料\\红水河\\红水河泉水出露点.MOV' />"
+                   +"</video></center>"+
+                   "<br><center>红水河泉水出露点.MOV</center>"
+              },
+              {
+                type: "text", 
+                text:
+                  "<center><video  width='356' height='200' preload controls>"+
+                   "<source src='D:\\admin\\Desktop\\liangZhouQuData\\620180927提华科_20180927\\河道影像资料\\黄羊河\\14调研第八处——黄羊渠首人饮水厂 (1).MOV' />"
+                   +"</video></center>"+
+                   "<br><center>调研第八处——黄羊渠首人饮水厂 (1).MOV</center>"
+              }
+            ]
+          }
+
+          var templateHeWang={
+            title: "河网",
+            content: [
+              {
+                type: "fields", // FieldsContentElement
+                fieldInfos: [
+                  {
+                    fieldName: "NAME",
+                    visible: true,
+                    label: "河段名称"
+                  },
+                  {
+                    fieldName: "SHAPE_Leng",
+                    visible: true,
+                    label: "河段长度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "GB",
+                    visible: true,
+                    label: "GB",
+                    format: {
+                      places: 0
+                    }
+                  },
+                  {
+                    fieldName: "HYDC",
+                    visible: true,
+                    label: "HYDC"
+                  }                  
+                ]
+              }
+              ]
+          }
+
+          var templateJiangShuiCeZhan={
+            title: "降水测站",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "Sheet1__站名",
+                    visible: true,
+                    label: "降水测站名称"
+                  },
+                  {
+                    fieldName: "Sheet1__X",
+                    visible: true,
+                    label: "经度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "Sheet1__Y",
+                    visible: true,
+                    label: "纬度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "Sheet1__测站高程",
+                    visible: true,
+                    label: "测站高程",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "Sheet1__实测年份",
+                    visible: true,
+                    label: "实测年份"
+                  },
+                  {
+                    fieldName: "Sheet1__年数",
+                    visible: true,
+                    label: "年数",
+                    format: {
+                      places: 0
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateZhengFaCeZhan={
+            title: "蒸发测站",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "Name",
+                    visible: true,
+                    label: "蒸发测站名称"
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateShuiWenCeZhan={
+            title: "水文测站",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "水文站名",
+                    visible: true,
+                    label: "水文测站名称"
+                  },
+                  {
+                    fieldName: "河流名称",
+                    visible: true,
+                    label: "河流名称"
+                  },
+                  {
+                    fieldName: "X",
+                    visible: true,
+                    label: "经度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "Y",
+                    visible: true,
+                    label: "纬度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "多年平均流量",
+                    visible: true,
+                    label: "多年平均流量(m3/s)",
+                    format: {
+                      places: 3
+                    }
+                  }
+                ]
+              },
+              {
+                type: "media", 
+                mediaInfos: [
+                  {
+                    title: "<b>Count by type</b>",
+                    type: "column-chart",
+                    caption: "",
+                    value: {
+                      fields: ["relationships/0/Point_Count_COMMON"],
+                      normalizeField: null,
+                      tooltipField: "relationships/0/COMMON"
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateShuiZhiJianCeDuanMian={
+            title: "水质监测断面",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "水源地名称",
+                    visible: true,
+                    label: "水源地名称"
+                  },
+                  {
+                    fieldName: "x",
+                    visible: true,
+                    label: "经度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "y",
+                    visible: true,
+                    label: "纬度",
+                    format: {
+                      places:3
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateShuiDianZhan={
+            title: "水电站",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "名称",
+                    visible: true,
+                    label: "水电站名称"
+                  },
+                  {
+                    fieldName: "x",
+                    visible: true,
+                    label: "经度",
+                    format: {
+                      places:3
+                    }
+                  },
+                  {
+                    fieldName: "y",
+                    visible: true,
+                    label: "纬度",
+                    format: {
+                      places:3
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateShuiYuanDi={
+            title: "水源地",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "水源地名称",
+                    visible: true,
+                    label: "水源地名称"
+                  },
+                  {
+                    fieldName: "x",
+                    visible: true,
+                    label: "经度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "y",
+                    visible: true,
+                    label: "纬度",
+                    format: {
+                      places:3
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+          
+          var templateShuiZha={
+            title: "水闸",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "名称",
+                    visible: true,
+                    label: "水闸名称"
+                  },
+                  {
+                    fieldName: "x",
+                    visible: true,
+                    label: "经度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "y",
+                    visible: true,
+                    label: "纬度",
+                    format: {
+                      places:3
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateShuiKu={
+            title: "水库",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "名称",
+                    visible: true,
+                    label: "水库名称"
+                  },
+                  {
+                    fieldName: "等级",
+                    visible: true,
+                    label: "等级"
+                  },
+                  {
+                    fieldName: "总库容",
+                    visible: true,
+                    label: "总库容(万m³)"
+                  },
+                  {
+                    fieldName: "兴利库容",
+                    visible: true,
+                    label: "兴利库容(万m³)"
+                  },
+                  {
+                    fieldName: "死库容",
+                    visible: true,
+                    label: "死库容(万m³)"
+                  },
+                  {
+                    fieldName: "防洪库容",
+                    visible: true,
+                    label: "防洪库容(万m³)"
+                  },
+                  {
+                    fieldName: "死水位",
+                    visible: true,
+                    label: "死水位(m)"
+                  },
+                  {
+                    fieldName: "正常蓄水位",
+                    visible: true,
+                    label: "正常蓄水位(m)"
+                  },
+                  {
+                    fieldName: "设计洪水位",
+                    visible: true,
+                    label: "设计洪水位(m)"
+                  },
+                  {
+                    fieldName: "校核洪水位",
+                    visible: true,
+                    label: "校核洪水位(m)"
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateWuShuiChuLiChang={
+            title: "污水处理厂",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "名称",
+                    visible: true,
+                    label: "污水处理厂名称"
+                  },
+                  {
+                    fieldName: "x",
+                    visible: true,
+                    label: "经度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "y",
+                    visible: true,
+                    label: "纬度",
+                    format: {
+                      places:3
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateCaiShaChang={
+            title: "采砂场",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "名称",
+                    visible: true,
+                    label: "采砂场名称"
+                  },
+                  {
+                    fieldName: "x",
+                    visible: true,
+                    label: "经度",
+                    format: {
+                      places: 3
+                    }
+                  },
+                  {
+                    fieldName: "y",
+                    visible: true,
+                    label: "纬度",
+                    format: {
+                      places:3
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateTieLu={
+            title: "铁路",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "名称",
+                    visible: true,
+                    label: "名称"
+                  }
+                ]
+              }
+              ]
+          }
+          var templateGuoDao={
+            title: "国道",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "名称",
+                    visible: true,
+                    label: "名称"
+                  }
+                ]
+              }
+              ]
+          }
+          var templateShengDao={
+            title: "省道",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "名称",
+                    visible: true,
+                    label: "名称"
+                  }
+                ]
+              }
+              ]
+          }
+
+          var templateXingZhengQuHua={
+            title: "乡镇",
+            content: [
+              {
+                type: "fields", 
+                fieldInfos: [
+                  {
+                    fieldName: "NAME",
+                    visible: true,
+                    label: "乡镇名称",
+                    format: {
+                      places: 0,
+                      digitSeparator: true
+                    }
+                  },
+                  {
+                    fieldName: "BaseMap.DBO.行政区划_凉州区乡镇界限.AREA",
+                    visible: true,
+                    label: "面积(km²)",
+                    format: {
+                      places: 3
+                    }
+                  }
+                ]
+              }
+              ]
+          }
+
+           var nameHeLiu=["红水河","黄羊河","金塔河","马蹄河","沙沟河","西营河","小沙河","杂木河"];
+           var layer1=[];
+           for(var i=1;i<=8;i++){
+            var layer0=new FeatureLayer({
+              url: "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/"+i,
+              title:nameHeLiu[i-1],
+              outFields: ["*"],
+              popupTemplate:templateHeLiu
+              });
+            layer1.push(layer0);
+          };
+        var groupLayerHeLiu = new GroupLayer({
+           title: "河流",
+           visible: true,
+           visibilityMode: "independent",
+           layers: layer1
+         });
+
+         var layer2=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/9",
+              title:"河网",
+              outFields: ["*"],
+              popupTemplate:templateHeWang
+          });
+          var groupLayerHeWang = new GroupLayer({
+           title: "河网",
+           visible: false,
+           visibilityMode: "independent",
+           layers: [layer2]
+         });
+
+         var layer3j=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/11",
+              title:"降水测站",
+              outFields: ["*"],
+              visible: true,
+              popupTemplate:templateJiangShuiCeZhan
+          });
+          var layer3z=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/12",
+              title:"蒸发测站",
+              outFields: ["*"],
+              visible: true,
+              popupTemplate:templateZhengFaCeZhan
+          });
+         var layer3=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/13",
+              title:"水文测站",
+              outFields: ["*"],
+              popupTemplate:templateShuiWenCeZhan
+          });
+          var layer4=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/14",
+               title:"水质监测断面",
+              outFields: ["*"],
+              popupTemplate:templateShuiZhiJianCeDuanMian
+          });
+          var groupLayerCeZhan = new GroupLayer({
+           title: "测站",
+           visible: false,
+           visibilityMode: "independent",
+           layers: [layer3j,layer3z,layer3,layer4]
+         });
+
+          var layer5=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/16",
+              title:"水电站",
+              visible:false,
+              outFields: ["*"],
+              popupTemplate:templateShuiDianZhan
+          });
+          var layer6=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/17",
+              title:"水源地",
+              visible:false,
+              outFields: ["*"],
+              popupTemplate:templateShuiYuanDi
+          });
+          var layer7=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/18",
+              title:"水闸",
+              visible:false,
+              outFields: ["*"],
+              popupTemplate:templateShuiZha
+          });
+
+          var nameShuiKu=["黄羊水库","南营水库","西营水库"];
+          var layer8=[];
+           for(var i=20;i<=22;i++){
+            var layer0=new FeatureLayer({
+              url: "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/"+i,
+              outFields: ["*"],
+              title:nameShuiKu[i-20],
+              popupTemplate:templateShuiKu
+              });
+            layer8.push(layer0);
+          };
+          var groupLayerShuiKu = new GroupLayer({
+           title: "水库",
+           visible: true,
+           visibilityMode: "independent",
+           layers: layer8
+         });
+         var groupLayerShuiLiGongCheng = new GroupLayer({
+           title: "水利工程",
+           visible: true,
+           visibilityMode: "independent",
+           layers: [layer7,layer6,layer5,groupLayerShuiKu]
+         });
+
+          var layer9w=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/24",
+              title:"污水处理厂",
+              outFields: ["*"],
+              popupTemplate:templateWuShuiChuLiChang
+          });
+          var layer9c=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/25",
+              title:"采砂场",
+              outFields: ["*"],
+              popupTemplate:templateCaiShaChang
+          });
+
+          var groupLayerSheShuiGongCheng = new GroupLayer({
+           title: "涉水工程",
+           visible: false,
+           visibilityMode: "independent",
+           layers: [layer9w,layer9c]
+         });
+
+          var layer10t=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/27",
+              title:"铁路",
+              outFields: ["*"],
+              popupTemplate:templateTieLu
+          });
+          var layer10g=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/28",
+              title:"国道",
+              outFields: ["*"],
+              popupTemplate:templateGuoDao
+          });
+          var layer10s=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/29",
+              title:"省道",
+              outFields: ["*"],
+              legendEnabled:true,
+              popupTemplate:templateShengDao
+          });
+
+          var groupLayerDaoLu = new GroupLayer({
+           title: "道路",
+           visible: true,
+           visibilityMode: "independent",
+           legendEnabled:true,
+           layers: [layer10s,layer10g,layer10t]
+         });
+
+         var layer11=new FeatureLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/basemapAll3/FeatureServer/31",
+              title:"乡镇界限",
+              outFields: ["*"],
+              popupTemplate:templateXingZhengQuHua
+          });
+          var groupLayerXingZhengQuHua = new GroupLayer({
+           title: "行政区划",
+           visible: true,
+           visibilityMode: "independent",
+           layers: [layer11]
+         });
+
+         
+         var layer12=new MapImageLayer({
+            url:
+              "http://localhost:6080/arcgis/rest/services/BaseMap/DEM/MapServer",
+              title:"DEM",
+              format: "jpgpng"
+          });
+          var groupLayerDEM = new GroupLayer({
+           title: "凉州区DEM",
+           visible: true,
+           visibilityMode: "independent",
+           layers: [layer12]
+         });
+
+
+        var map = new Map({
+          basemap: "osm",
+          layers: [groupLayerDEM,groupLayerXingZhengQuHua,groupLayerDaoLu,groupLayerSheShuiGongCheng,groupLayerShuiLiGongCheng,groupLayerCeZhan,groupLayerHeWang,groupLayerHeLiu]
+        });
+        var view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [102.746951,37.817633],
+          zoom: 10
+        });
+        view.ui._removeComponents(["attribution"]);
+
+        //默认视图按钮
+        var homeBtn = new Home({
+          view: view
+        });
+        view.ui.add(homeBtn, "top-left");
+        //搜索框
+        var searchWidget = new Search({
+          view: view,
+          searchAllEnabled:false,
+          locationEnabled:false,
+          activeSourceIndex:1,
+          //defaultSources:false,
+          sources:[ 
+            {
+              layer: layer11,
+              searchFields: ["NAME"],
+              suggestionsEnabled:true,
+              suggestionTemplate: "{NAME}",
+              exactMatch: false,
+              outFields: ["*"],
+              placeholder: "请输入乡镇：例如: 清水镇",
+              name:"搜索 行政区划",
+              zoomScale:2
+            }
+          //   ,
+          //   {
+          //     layer: groupLayerHeLiu,
+          //     searchFields: ["河段名称"],
+          //     suggestionsEnabled:true,
+          //     suggestionTemplate: "{河段名称}",
+          //     exactMatch: false,
+          //     outFields: ["*"],
+          //     placeholder: "请输入河段名称：例如: 红水河",
+          //     name:"搜索 河段",
+          //     zoomScale:2
+          //   }
+           ]
+        });
+        view.ui.add(searchWidget,"top-left");
+        //图层控制
+        //view.when(function() {
+          var layerList = new LayerList({
+            view: view,
+            listItemCreatedFunction: function(event) {
+            const item = event.item;
+            if (item.layer.type != "group") {
+              // don't show legend twice
+              item.panel = {
+                content: "legend",
+                open: true
+              };
+            }
+          }
+          });
+          view.ui.add(layerList, "top-left");
+       // });
+
+
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
